@@ -1,0 +1,83 @@
+import paho.mqtt.client as mqtt
+import json
+import tkinter as tk
+
+#mqtt set up
+MQTT_BROKER = "broker.hivemq.com"
+MQTT_PORT = 1883
+MQTT_TOPIC = "sensor/data"
+
+temperature = None
+humidity = None
+light = None
+led_status = None
+
+#Update GUI
+def update_gui():
+        if temperature is not None:
+                temp_label.config(text=f"Temperature: {temperature:.2f} C")
+        if humidity is not None:
+                humidity_label.config(text=f"Humidity: {humidity:.2f} %")
+        if light is not None:
+                light_label.config(text=f"Light Intensity: {light} Lux")
+        if led_status is not None:
+                led_label.config(text=f"LED status: {led_status}")
+        root.after(5000, update_gui)
+
+def on_message(client, userdata, message):
+        global temperature, humidity, light, led_status
+        payload = message.payload.decode('utf-8')
+        data = json.loads(payload)
+        temperature = data.get('temperature', None)
+        humidity = data.get('humidity', None)
+        light = data.get('light', None)
+        led_status = data.get('led_status', None)
+        update_gui()
+
+
+if temperature is not None and humidity is not None and light is not None:
+        if temperature <= temp_threshold or humidity <= humidity_threshold or l>
+                led_status = "Green"
+        else:
+                led_status = "Red"
+
+#mqtt client setup
+client = mqtt.Client()
+client.on_message = on_message
+
+def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+                print("Connected to MQTT Broker!")
+                client.subscribe(MQTT_TOPIC)
+        else:
+                print(f"failed to connect, return code {rc}")
+
+client.on_connect = on_connect
+client.connect(MQTT_BROKER, MQTT_PORT, 60)
+client.loop_start()
+
+
+#GUI set up
+
+root = tk.Tk()
+root.title("Sensor Data")
+
+temp_label = tk.Label(root, text="Temperature: -- C", font=('Helvetica', 14))
+temp_label.pack(pady=10)
+
+humidity_label = tk.Label(root, text="Humidity: -- %", font=('Helvetica', 14))
+humidity_label.pack(pady=10)
+
+light_label = tk.Label(root, text="Light Intensity: -- Lux", font=('Helvetica',>
+light_label.pack(pady=10)
+
+led_label = tk.Label(root, text="LED Status: --", font=('Helvetica', 14))
+led_label.pack(pady=10)
+
+root.after(5000, update_gui)
+root.mainloop()
+
+#Cleanup
+
+client.disconnect()
+client.loop_stop()
